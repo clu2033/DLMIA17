@@ -10,7 +10,7 @@
 \mainmatter              % start of the contributions
 
 
-\title{Fully Convolutional Dense Networks for Segmentation of Cilia}
+\title{Semantic Segmentation of Cilia using Fully-Convolutional Dense Networks}
 \titlerunning{Cilia Segmentation}  % abbreviated title (for running head)
 \author{Charles Lu \and
 Shannon Quinn}
@@ -23,21 +23,21 @@ Shannon Quinn}
 
 
 \begin{abstract}
-Cilia are hairlike structures found on the cell body. An accurate detection of cilia is clinically significant in the study and diagnosis of a wide spectrum of diseases known as \textit{ciliopathies}. Cilia are extremely hard to segment out from an image due to their size and shape. Manual annotation is tedious and other methods of analysis assume a periodic motion of beating cilia for detection. Deep convolutional networks are able to encode complex features while remaining sensitive enough to segment cilia that exhibit abnormal or dyskinetic motion. We compare fully convolutional networks with dense connections to a baseline model without dense connections for the novel task of cilia segmentation from images of microscopy videos. Trained on only 235 labeled images, our fully convolutional DenseNet achieves an overall pixel accuracy of 90.15\%, which is 14\% more accurate than U-Net with 10x fewer parameters. We demonstrate the utility and parameter efficiency of DenseNets for semantic segmentation of small biomedical datasets.
+Cilia are hairlike structures protruding from nearly every cell in the body. Diseases known as ciliopathies with disruption of nonmotile or motile cilia function can result in a wide spectrum of diseases. However, most techniques for assessing ciliary motion rely on manual identification and tracking of cilia. This annotation is tedious and error-prone, whereas more analytical techniques impose strong assumptions such as periodic motion of beating cilia. Deep convolutional networks are able to encode complex features while remaining sensitive enough to segment cilia that exhibit a variety of motion patterns. We compare fully convolutional networks with dense connections to a baseline model without dense connections for the novel task of automated cilia segmentation from frames of biopsy videos. Trained on only 235 labeled images, our fully convolutional DenseNet achieves an overall pixel accuracy of 90.15\%, which is 14\% more accurate than U-Net with 10x fewer parameters. We demonstrate the utility and parameter efficiency of DenseNets for semantic segmentation of small biomedical datasets, and anticipate this method could be used in a larger automated ciliary motion analysis pipeline.
 
- \keywords{Cilia, Semantic Segmentation, DenseNets, Fully Convolutional DenseNets}
+ \keywords{Cilia, Ciliopathies, Semantic Segmentation, DenseNets, Fully Convolutional DenseNets}
 \end{abstract}
 
 
 \section{Introduction}
 
-Cilia help to regulate the respiratory system by generating fluid flow to deliver nutrients and propel out mucus and foreign matter. These hairlike structures on the cell body are vital in reproduction, homeostasis, and  organs development. Defects in ciliary motion have been associated with a wide range of diseases such as birth defects, Sinopulmonary infection, and congenital heart disease \cite{Ciliopathy}. Therefore, accurate segmentation of cilia, both normal and abnormal, provide clinical significance in the diagnosis and research of these ciliopathies. 
+Cilia help to regulate the respiratory system by generating fluid flow to deliver nutrients and propel out mucus and foreign matter. These hairlike structures on the cell body are vital in reproduction, homeostasis, and  organs development. Defects in ciliary motion have been associated with a wide range of diseases such as birth defects, sinopulmonary infection, and congenital heart disease \cite{Ciliopathy}. Assessment of ciliary motion from biopsy videos relies on accurate detection and segmentation of cilia from the surrounding cell, a task that even in a recent ciliary motion analysis pipelines remains as manual labor~\cite{QuinnSTM}. Therefore, accurate and fully automated segmentation of motile cilia provides clinical significance in the identification and further study of ciliopathies and their underlying motion patterns. 
 \par 
-Many current methods of cilia analysis rely on information about the underlying ciliary motion or involve indirect measurements such as Nitric Oxide levels, which have a high false positive signal. Furthermore,  manual examination is tedious, time-consuming, and highly subjective with little consensus on ciliary motion even between different clinics. Therefore, a fast and reliable end-to-end model that requires minimal intervention and assumptions is desirable to clinicians and researchers. To our knowledge, no computational pipeline for semantic cilia segmentation from microscopy images has been proposed using deep learning techniques. 
+Current methods of ciliopathy identification and diagnosis rely on an ensemble of techniques. Electron microscopy (EM) can elucidate structural defects that connect to certain ciliopathies, but some ciliopathies present without any discernible structural deformities~\cite{CiliaEM}. Examining ciliary beat pattern from videos of ciliary biopsies is among the most promising methods, but this is usually conducted manually; consequently it is tedious and time-consuming, and the eventual conclusions are highly subjective~\cite{CiliaCM}. Furthermore, there is little consensus on deterministic definitions of ciliary motion phenotypes, ruling out any possibility of cross-institutional collaboration. While \cite{QuinnSTM} proposed a promising initial ciliary motion quantification pipeline, it was limited in its reliance on manually-selected regions of interest on which to operate. Therefore, a fast and reliable method automating the region-of-interest selection process is desirable to clinicians and researchers, accelerating the adoption of objective ciliary motion measures and bringing an end-to-end ciliary motion analysis pipeline closer to fruition. To our knowledge, no computational pipeline for semantic cilia segmentation from microscopy images has been proposed using deep learning techniques. 
 \par
-Deep learning approaches to semantic segmentation have gained state of the art performance on many benchmark datasets in biomedical imaging. The task of cilia segmentation is challenging due to their size, shape, and orientation. A cilium can present itself in only a few pixels in an image depending on its orientation to the camera perspective. In addition, the hairlike shape of cilia can easily be mistaken for extraneous recording artifacts such as poor focus, inconsistent lighting, and blur from a shaky camera perspective.
+Deep learning approaches to semantic segmentation have gained state of the art performance on many benchmark datasets in biomedical imaging. The task of cilia segmentation is challenging due to their size, shape, and orientation. A single cilium can present itself in only a few pixels in an image depending on its orientation to the camera perspective. In addition, the hairlike shape of cilia can easily be mistaken for extraneous recording artifacts such as poor focus, inconsistent lighting, and blur from a shaky camera perspective.
 \par
-Another challenge in cilia detection is the assumption and reliance of temporal information about cilia. A model for automatic detection of cilia should ideally be able to segment and classify cilia that do not display a regular motion or have a dyskinetic motion. Cilia with this abnormal motion warrant more inspection than cilia with normal motion, thus the segmentation model should be able to identify cilia from a single frame of microscopy video. 
+Another challenge in cilia detection is the assumption and reliance of temporal information about cilia. A model for automatic detection of cilia should ideally be able to segment and classify cilia that do not display a regular motion; diseased ciliary motion patterns may show little, if any, motility, thus the segmentation model should be able to identify cilia from a single frame of microscopy video.
 \par 
 Fully convolutional networks (FCN) \cite{FCN} comprise of a feature extractor that feeds into an upsampling path to recover back an image of the predicted segmentation mask. Shortcut or skip connections can be introduced between the downsampling and upsampling paths to allow for passing of feature information to deeper layers \cite{Highway}. These skip connection allow for deep networks to be trained as the gradient can flow propagate more easily from deep layers. This type of architecture has been applied to biomedical imaging data as an end-to-end model for segmentation tasks \cite{U-Net}.
 \par
@@ -77,7 +77,7 @@ We train FC-DenseNets with different number of layers to study the optimal trade
 \section{Experiment}
 
 \subsection{Data}
-325 grayscale videos from nasal brush biopsies were collected from 149 patients. Each video depicted cilia along with varying levels of recording artifacts such as extraneous camera movement, uneven lighting, or poor focus. A cilium structure observed vertically to the camera's perspective appears very different than a cilium lining the side of the cell body. To address this, we separate cilia annotations into \textit{side} cilia and \textit{top} cilia class labels. Four class annotations (side, cilia, top cilia, cell body, and background) were manually segmented out using ITK-SNAP \cite{ITK-SNAP}.
+325 grayscale videos from two separate video cohorts of nasal brush biopsies were collected from 149 patients (data from ~\cite{QuinnSTM}; see it for details on patient recruitment, nasal biopsy extraction, and spectroscopic techniques and technologies). Each video depicted cilia along with varying levels of recording artifacts such as extraneous camera movement, uneven lighting, or poor focus. A cilium structure observed vertically to the camera's perspective appears very different than a cilium lining the side of the cell body. To address this, we separate cilia annotations into \textit{side} cilia and \textit{top} cilia class labels. Four class annotations (side, cilia, top cilia, cell body, and background) were manually segmented out using ITK-SNAP \cite{ITK-SNAP}.
 \par
 Only the first frame of each video is used so that the model avoids relying on any information about ciliary motion in the temporal dimension for segmentation. The pixels were normalized by subtracting the mean pixel value and dividing by the standard deviation. The dimension of each image varied in resolution so all images were resized to $224 \times 224$ pixels and transformed by random flips to augment the data. We set aside 75 of the 325 images as a holdout test set and randomly choose samples from the remaining 250 for training and validation using a $60/40$\% train-validation split.
 
@@ -149,14 +149,27 @@ Unlike most fully convolutional networks, FC-DenseNets achieve excellent results
 
 
 \section{Conclusion}
-In this paper, we demonstrate the efficacy of a fully convolutional DenseNet on the challenging task of cilia segmentation and explore the implicit regularizing properties inherent to this network architecture.  We also highlight the advantageous properties of fully convolution DenseNets for biomedical datasets with few labels for semantic segmentation.
-
+In this paper, we demonstrate the efficacy of a fully convolutional DenseNet on the challenging task of cilia segmentation and explore the implicit regularizing properties inherent to this network architecture. We also highlight the advantageous properties of fully convolution DenseNets for biomedical datasets with few labels for semantic segmentation. We plan to incorporate the semantic segmentation model into our previous ciliary motion analysis pipeline to increase the overall automation, permitting analysis of vastly larger data cohorts as we ultimately seek to characterize and quantify discrete ciliary motion subtypes and understand their roles in certain ciliopathies.
 
 \section*{Acknowledgements}
 We would like to thank all the developers of Tensroflow and Keras for providing extremely powerful  frameworks for deep learning.  We  t? gratefully  acknowledge  NVIDIA  for  GPU  donation to  our  lab  at?Ecole  Polytechnique.  The  authors  would  like  to  thank  Lisa  diJorio,  Adriana  Romero  and  Nicolas  Chapados  for  insightful  discussions.  
 
+\begin{thebibliography}{26}
 
-\begin{thebibliography}{23}
+\bibitem{CiliaCM}
+Raidt, J. et al.:
+Ciliary beat pattern and frequency in genetic variants of primary ciliary dyskinesia.
+European Respiratory Journal, pp. erj00520--2014 (2014).
+
+\bibitem{CiliaEM}
+Stannard, W.A., Chilvers, M.A., Rutman, A.R., Williams, C.D., O'Callaghan, C.:
+Diagnostic testing of patients suspected of primary ciliary dyskinesia.
+American journal of respiratory and critical care medicine, 181(4), pp. 307--314 (2010)
+
+\bibitem{QuinnSTM}
+Quinn, S., Zahid, M.J., Durkin, J.R., Francis, R.J., Lo, C.W., Chennubhotla, S.C.:
+Automated identification of abnormal respiratory ciliary motion in nasal biopsies.
+Science Translational Medicine, 7(299), pp. 299ra124--299ra124 (2015)
 
 \bibitem{TensorFlow}
 Abadi, M., et al.:
